@@ -1,3 +1,6 @@
 # LSE Assistant - Python dependencies
 # Python 3.13.5
 # Dependencies will be added progressively after validation.
+
+gpiozero
+smbus2
