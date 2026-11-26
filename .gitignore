@@ -1,0 +1,26 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python generated files
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE settings
+.vscode/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables
+.env
+
+# Temporary files and logs
+*.log
+*.tmp
+
+# Local datasets
+datasets/
