@@ -63,6 +63,26 @@ Para activarlo e instalar las dependencias:
 La biblioteca gpiozero utiliza lgpio como controlador
 para acceder a los GPIO de la Raspberry Pi 5.
 
+## Modelo de reconocimiento de voz
+
+El proyecto utiliza el modelo vosk-model-small-es-0.42
+para el reconocimiento de voz en castellano.
+
+- Autor: AC Technologies LLC.
+- Versión: 0.42.
+- Licencia: Apache 2.0.
+- Tamaño descomprimido: aproximadamente 58 MB.
+- Fuente: https://alphacephei.com/vosk/models
+- Ubicación: modelos/vosk-model-small-es-0.42/
+
+Se ha seleccionado la versión ligera para reducir el consumo
+de recursos de la Raspberry Pi.
+
+El modelo está incluido en el repositorio para facilitar
+la instalación y garantizar la reproducibilidad del proyecto.
+
+Se conservan el README original y la licencia del modelo.
+
 ## Estado del proyecto
 
 En desarrollo.
