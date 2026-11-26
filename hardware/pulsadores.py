@@ -49,9 +49,9 @@ def detectar_pulsaciones(pulsador_1, pulsador_2, cola_eventos, evento_fin):
         if estado_1 and estado_2 and not pulsacion_simultanea:
             diferencia = abs(inicio_pulsacion_1 - inicio_pulsacion_2)
 
-        if diferencia <= VENTANA_PULSACION_SIMULTANEA:
-            pulsacion_simultanea = True
-            cola_eventos.put(("PULSACION_SIMULTANEA", None))
+            if diferencia <= VENTANA_PULSACION_SIMULTANEA:
+                pulsacion_simultanea = True
+                cola_eventos.put(("PULSACION_SIMULTANEA", None))
 
         # Si se ha detectado una pulsación simultánea,
         # espera hasta que ambos pulsadores estén sueltos.
