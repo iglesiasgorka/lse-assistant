@@ -11,7 +11,7 @@ from hardware.pulsadores import (
 
 from hardware.lcd import (
     inicializar_lcd,
-    escribir_pantalla,
+    gestionar_lcd,
     cerrar_lcd
 )
 
@@ -19,6 +19,7 @@ from hardware.lcd import (
 def main():
     evento_fin = Event()
     cola_eventos = Queue()
+    cola_lcd = Queue()
 
     # Inicialización de los dispositivos físicos.
     led_rojo, led_verde = inicializar_leds()
@@ -31,14 +32,21 @@ def main():
         args=(pulsador_1, pulsador_2, cola_eventos, evento_fin)
     )
 
-    # Inicia la ejecución del hilo de los pulsadores.
+    # Creación del hilo encargado de gestionar la pantalla LCD.
+    hilo_lcd = Thread(
+        target=gestionar_lcd,
+        args=(bus_lcd, cola_lcd, evento_fin)
+    )
+
+    # Inicia la ejecución de los hilos secundarios.
     hilo_pulsadores.start()
+    hilo_lcd.start()
 
     # Bucle principal de recepción de eventos.
     try:
         # Indica que el sistema está preparado.
         led_verde.on()
-        escribir_pantalla(bus_lcd, "Sistema listo", "Pulsa un boton")
+        cola_lcd.put(("ESTATICO", ("Sistema listo", "Pulsa un boton")))
 
         while not evento_fin.is_set():
             try:
@@ -54,26 +62,27 @@ def main():
             # Muestra el tipo de pulsación mediante los LEDs y el LCD.
             if tipo_evento == "PULSACION_CORTA":
                 led_verde.on()
-                escribir_pantalla(bus_lcd, "Pulsacion corta", f"Pulsador {dato}")
+                cola_lcd.put(("ESTATICO", ("Pulsacion corta", f"Pulsador {dato}")))
 
             elif tipo_evento == "PULSACION_LARGA":
                 led_rojo.on()
-                escribir_pantalla(bus_lcd, "Pulsacion larga", f"Pulsador {dato}")
+                cola_lcd.put(("ESTATICO", ("Pulsacion larga", f"Pulsador {dato}")))
 
             elif tipo_evento == "PULSACION_SIMULTANEA":
                 led_verde.on()
                 led_rojo.on()
-                escribir_pantalla(bus_lcd, "Simultanea", "Ambos pulsadores")
+                cola_lcd.put(("DESPLAZAMIENTO", "Hola, esto es una prueba de desplazamiento automático de la pantalla LCD."))
 
     except KeyboardInterrupt:
         print("Finalizando programa...")
 
     finally:
-        # Señaliza al hilo de los pulsadores que debe finalizar.
+        # Señaliza a los hilos secundarios que deben finalizar.
         evento_fin.set()
 
-        # Espera a que termine el hilo.
+        # Espera a que terminen los hilos secundarios.
         hilo_pulsadores.join()
+        hilo_lcd.join()
 
         # Libera los recursos del hardware.
         cerrar_pulsadores(pulsador_1, pulsador_2)
