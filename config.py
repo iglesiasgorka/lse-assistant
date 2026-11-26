@@ -26,3 +26,10 @@ FPS_CAMARA = 30
 # Configuración del audio
 FRECUENCIA_MUESTREO = 16000
 CANALES_AUDIO = 1
+
+# Configuración del reconocimiento de voz.
+RUTA_MODELO_VOSK = "modelos/vosk-model-small-es-0.42"
+FORMATO_AUDIO = "s16"
+TAMANO_BLOQUE_AUDIO = 8000
+INTERVALO_LECTURA_AUDIO = 0.1
+TIEMPO_CIERRE_AUDIO = 2.0

@@ -1,7 +1,7 @@
 from threading import Thread, Event
 from queue import Queue, Empty
 
-from hardware.leds import inicializar_leds, apagar_leds, cerrar_leds
+from hardware.leds import inicializar_leds, cerrar_leds
 
 from hardware.pulsadores import (
     inicializar_pulsadores,
@@ -15,11 +15,26 @@ from hardware.lcd import (
     cerrar_lcd
 )
 
+from audio.reconocimiento_voz import (
+    cargar_modelo,
+    gestionar_reconocimiento_voz
+)
+
 # Coordina el funcionamiento de los distintos módulos del sistema.
 def main():
     evento_fin = Event()
+    evento_inicio_escucha = Event()
+    evento_escucha = Event()
+
     cola_eventos = Queue()
     cola_lcd = Queue()
+
+    # Estado del reconocimiento de voz.
+    estado_escucha = "REPOSO"
+    texto_voz = ""
+
+    # Cargamos el modelo de reconocimiento de voz.
+    modelo_voz = cargar_modelo()
 
     # Inicialización de los dispositivos físicos.
     led_rojo, led_verde = inicializar_leds()
@@ -38,15 +53,28 @@ def main():
         args=(bus_lcd, cola_lcd, evento_fin)
     )
 
+    # Creamos el hilo independiente de reconocimiento de voz.
+    hilo_voz = Thread(
+        target=gestionar_reconocimiento_voz,
+        args=(
+            modelo_voz,
+            cola_eventos,
+            evento_inicio_escucha,
+            evento_escucha,
+            evento_fin
+        )
+    )
+
     # Inicia la ejecución de los hilos secundarios.
     hilo_pulsadores.start()
     hilo_lcd.start()
+    hilo_voz.start()
 
     # Bucle principal de recepción de eventos.
     try:
         # Indica que el sistema está preparado.
         led_verde.on()
-        cola_lcd.put(("ESTATICO", ("Sistema listo", "Pulsa un boton")))
+        cola_lcd.put(("ESTATICO", ("Voz a texto", "Pulsa boton 1")))
 
         while not evento_fin.is_set():
             try:
@@ -56,22 +84,65 @@ def main():
 
             print(tipo_evento, dato)
 
-            # Apaga los LEDs antes de procesar una nueva pulsación.
-            apagar_leds(led_rojo, led_verde)
-
-            # Muestra el tipo de pulsación mediante los LEDs y el LCD.
+            # Gestionamos las pulsaciones durante el modo voz a texto.
             if tipo_evento == "PULSACION_CORTA":
-                led_verde.on()
-                cola_lcd.put(("ESTATICO", ("Pulsacion corta", f"Pulsador {dato}")))
+                if dato == 1:
+                    if estado_escucha == "REPOSO":
+                        estado_escucha = "ESCUCHANDO"
+                        evento_escucha.set()
+                        evento_inicio_escucha.set()
 
-            elif tipo_evento == "PULSACION_LARGA":
-                led_rojo.on()
-                cola_lcd.put(("ESTATICO", ("Pulsacion larga", f"Pulsador {dato}")))
+                        led_verde.blink(on_time=0.3, off_time=0.3)
 
-            elif tipo_evento == "PULSACION_SIMULTANEA":
+                        cola_lcd.put(
+                            ("ESTATICO", ("Escuchando...", "Pulsa para parar"))
+                        )
+
+                    elif estado_escucha == "ESCUCHANDO":
+                        estado_escucha = "FINALIZANDO"
+                        evento_escucha.clear()
+
+                        cola_lcd.put(
+                            ("ESTATICO", ("Finalizando...", ""))
+                        )
+
+                elif dato == 2:
+                    if estado_escucha == "REPOSO":
+                        texto_voz = ""
+
+                        cola_lcd.put(
+                            ("ESTATICO", ("Texto borrado", "Pulsa boton 1"))
+                        )
+
+            # Gestionamos los resultados del reconocimiento de voz.
+            elif tipo_evento == "TEXTO_RECONOCIDO":
+                if texto_voz:
+                    texto_voz += " "
+
+                texto_voz += dato
+
+                cola_lcd.put(("DESPLAZAMIENTO", texto_voz))
+
+            # Confirmamos la finalización de la sesión de escucha.
+            elif tipo_evento == "FIN_ESCUCHA":
+                estado_escucha = "REPOSO"
                 led_verde.on()
+
+                if texto_voz:
+                    cola_lcd.put(("DESPLAZAMIENTO", texto_voz))
+                else:
+                    cola_lcd.put(
+                        ("ESTATICO", ("Sin texto", "Pulsa boton 1"))
+                    )
+
+            # Gestionamos los errores del reconocimiento de voz.
+            elif tipo_evento == "ERROR_VOZ":
+                print(f"Error de reconocimiento de voz: {dato}")
+
+                evento_escucha.clear()
+                led_verde.off()
                 led_rojo.on()
-                cola_lcd.put(("DESPLAZAMIENTO", "Hola, esto es una prueba de desplazamiento automático de la pantalla LCD."))
+                evento_fin.set()
 
     except KeyboardInterrupt:
         print("Finalizando programa...")
@@ -83,6 +154,7 @@ def main():
         # Espera a que terminen los hilos secundarios.
         hilo_pulsadores.join()
         hilo_lcd.join()
+        hilo_voz.join()
 
         # Libera los recursos del hardware.
         cerrar_pulsadores(pulsador_1, pulsador_2)
