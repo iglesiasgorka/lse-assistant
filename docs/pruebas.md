@@ -42,3 +42,30 @@ en condiciones normales de ejecución.
 Queda pendiente la gestión de errores, la creación del hilo
 independiente del LCD y la integración de los módulos de
 audio y reconocimiento visual.
+
+## 26/11/2026 - Hilo independiente del LCD
+
+### Resultados
+
+| Prueba | Resultado |
+|---|---|
+| Adaptación de caracteres especiales | Correcto |
+| Comunicación mediante cola_lcd | Correcto |
+| Visualización de mensajes estáticos | Correcto |
+| Desplazamiento automático de textos largos | Correcto |
+| Conservación del último fragmento | Correcto |
+| Interrupción del desplazamiento | Correcto |
+| Reinicio del desplazamiento | Correcto |
+| Respuesta de los pulsadores durante el desplazamiento | Correcto |
+| Finalización durante el desplazamiento | Correcto |
+
+### Conclusiones
+
+El hilo independiente del LCD permite actualizar la pantalla
+y desplazar textos largos sin bloquear el hilo principal
+ni el hilo de los pulsadores.
+
+La comunicación se realiza mediante Queue y la finalización
+se coordina mediante un Event compartido.
+
+Queda pendiente la gestión de errores durante la ejecución.
