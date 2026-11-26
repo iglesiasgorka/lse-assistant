@@ -43,6 +43,26 @@ El sistema se desarrollará en Python y se ejecutará sobre una Raspberry Pi 5, 
 
 El proyecto se limita al reconocimiento de letras estáticas del alfabeto dactilológico. No pretende realizar una traducción completa de la Lengua de Signos Española.
 
+## Configuración del entorno en Raspberry Pi 5
+
+El proyecto utiliza Python 3.13.5 y un entorno virtual.
+
+Para permitir el acceso a la biblioteca lgpio instalada
+en Raspberry Pi OS, el entorno virtual debe tener acceso
+a los paquetes del sistema.
+
+Para crear el entorno virtual desde cero:
+
+    python3 -m venv --system-site-packages .venv
+
+Para activarlo e instalar las dependencias:
+
+    source .venv/bin/activate
+    python -m pip install -r requirements.txt
+
+La biblioteca gpiozero utiliza lgpio como controlador
+para acceder a los GPIO de la Raspberry Pi 5.
+
 ## Estado del proyecto
 
 En desarrollo.
